@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const User = require('../models/User');
 const CryptoJS = require('crypto-js');
+const jwt = require('jsonwebtoken')
 
 //REGISTER
 router.post("/register", async (req, res) => {
@@ -34,10 +35,19 @@ router.post('/login', async (req, res) => {
 		originalPassword !== req.body.password &&
 			res.status(401).json('Mauvais mot de passe ou email!');
 
-    // PERMET DE NE PAS AFFICHER DE MOT DE PASSE COTE SERVEUR
-    const {password, ...info} = user._doc;
+      // ACCESS TOKEN AUGMENTE LA SECURITE DE L'APP ET NE PERMET PAS A N'IMPORTE
+      // QUI DE SUPPRIMER CE QUI NE LUI APAPRTIENT PAS
 
-		res.status(200).json(info);
+      const accessToken = jwt.sign(
+				{ id: user._id, isAdmin: user.isAdmin },
+				process.env.SECRET_KEY,
+        { expiresIn:'5d' }
+			);
+
+    // PERMET DE NE PAS AFFICHER DE MOT DE PASSE COTE SERVEUR
+    const { password, ...info } = user._doc;
+
+		res.status(200).json({ ...info, accessToken });
 	} catch (err) {
 		res.status(500).json(err);
 	}
